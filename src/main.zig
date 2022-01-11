@@ -8,7 +8,7 @@ var orig_termios: linux.termios = undefined;
 fn enableRawMode() void {
     _ = linux.tcgetattr(linux.STDIN_FILENO, &orig_termios);
     var raw = orig_termios;
-    raw.lflag &= ~linux.ECHO;
+    raw.lflag &= ~(linux.ECHO | linux.ICANON);
     _ = linux.tcsetattr(linux.STDIN_FILENO, .FLUSH, &raw);
 }
 
