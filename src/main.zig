@@ -7,6 +7,10 @@ const c = @cImport({
     @cInclude("ctype.h");
 });
 
+// These variables are not set in zig's std.os
+const VTIME: u8 = 5;
+const VMIN: u8 = 6;
+
 var orig_termios: linux.termios = undefined;
 
 fn enableRawMode() void {
@@ -16,6 +20,9 @@ fn enableRawMode() void {
     raw.oflag &= ~(linux.OPOST);
     raw.cflag |= linux.CS8;
     raw.lflag &= ~(linux.ECHO | linux.ICANON | linux.IEXTEN | linux.ISIG);
+    raw.cc[VMIN] = 0;
+    raw.cc[VTIME] = 1;
+
     _ = linux.tcsetattr(linux.STDIN_FILENO, .FLUSH, &raw);
 }
 
@@ -31,14 +38,15 @@ pub fn main() anyerror!void {
     enableRawMode();
     defer disableRawMode();
 
-    var char: [1]u8 = undefined;
-    var slice = char[0..char.len];
-    while ((try os.read(linux.STDIN_FILENO, slice)) == 1 and slice[0] != 'q') {
-        if (iscntrl(slice[0])) {
-            std.debug.print("{d}\r\n", .{slice[0]});
+    while (true) {
+        var char: [1]u8 = .{0};
+        _ = try os.read(linux.STDIN_FILENO, char[0..1]);
+        if (iscntrl(char[0])) {
+            std.debug.print("{d}\r\n", .{char[0]});
         } else {
-            std.debug.print("{d} ('{c}')\r\n", .{ slice[0], slice[0] });
+            std.debug.print("{d} ('{c}')\r\n", .{ char[0], char[0] });
         }
+        if (char[0] == 'q') break;
     }
 }
 
