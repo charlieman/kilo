@@ -38,13 +38,15 @@ pub fn main() anyerror!void {
     enableRawMode();
     defer disableRawMode();
 
+    const stdout = std.io.getStdOut().writer();
+
     while (true) {
         var char: [1]u8 = .{0};
         _ = try os.read(linux.STDIN_FILENO, char[0..1]);
         if (iscntrl(char[0])) {
-            std.debug.print("{d}\r\n", .{char[0]});
+            try stdout.print("{d}\r\n", .{char[0]});
         } else {
-            std.debug.print("{d} ('{c}')\r\n", .{ char[0], char[0] });
+            try stdout.print("{d} ('{c}')\r\n", .{ char[0], char[0] });
         }
         if (char[0] == 'q') break;
     }
