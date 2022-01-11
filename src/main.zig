@@ -12,8 +12,9 @@ var orig_termios: linux.termios = undefined;
 fn enableRawMode() void {
     _ = linux.tcgetattr(linux.STDIN_FILENO, &orig_termios);
     var raw = orig_termios;
-    raw.iflag &= ~(linux.ICRNL | linux.IXON);
+    raw.iflag &= ~(linux.BRKINT | linux.ICRNL | linux.INPCK | linux.ISTRIP | linux.IXON);
     raw.oflag &= ~(linux.OPOST);
+    raw.cflag |= linux.CS8;
     raw.lflag &= ~(linux.ECHO | linux.ICANON | linux.IEXTEN | linux.ISIG);
     _ = linux.tcsetattr(linux.STDIN_FILENO, .FLUSH, &raw);
 }
