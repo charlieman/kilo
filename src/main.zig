@@ -34,9 +34,9 @@ pub fn main() anyerror!void {
     var slice = char[0..char.len];
     while ((try os.read(linux.STDIN_FILENO, slice)) == 1 and slice[0] != 'q') {
         if (iscntrl(slice[0])) {
-            std.debug.print("{d}\n", .{slice[0]});
+            std.debug.print("{d}\r\n", .{slice[0]});
         } else {
-            std.debug.print("{d} ('{c}')\n", .{ slice[0], slice[0] });
+            std.debug.print("{d} ('{c}')\r\n", .{ slice[0], slice[0] });
         }
     }
 }
