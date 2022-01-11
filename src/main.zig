@@ -13,7 +13,7 @@ fn enableRawMode() void {
     _ = linux.tcgetattr(linux.STDIN_FILENO, &orig_termios);
     var raw = orig_termios;
     raw.iflag &= ~(linux.IXON);
-    raw.lflag &= ~(linux.ECHO | linux.ICANON | linux.ISIG);
+    raw.lflag &= ~(linux.ECHO | linux.ICANON | linux.IEXTEN | linux.ISIG);
     _ = linux.tcsetattr(linux.STDIN_FILENO, .FLUSH, &raw);
 }
 
