@@ -13,8 +13,9 @@ const VMIN: u8 = 6;
 
 var orig_termios: linux.termios = undefined;
 
-fn enableRawMode() void {
-    _ = linux.tcgetattr(linux.STDIN_FILENO, &orig_termios);
+fn enableRawMode() !void {
+    orig_termios = try os.tcgetattr(linux.STDIN_FILENO);
+
     var raw = orig_termios;
     raw.iflag &= ~(linux.BRKINT | linux.ICRNL | linux.INPCK | linux.ISTRIP | linux.IXON);
     raw.oflag &= ~(linux.OPOST);
@@ -23,11 +24,17 @@ fn enableRawMode() void {
     raw.cc[VMIN] = 0;
     raw.cc[VTIME] = 1;
 
-    _ = linux.tcsetattr(linux.STDIN_FILENO, .FLUSH, &raw);
+    if (linux.tcsetattr(linux.STDIN_FILENO, .FLUSH, &raw) == -1) {
+        return error.tcsetattr;
+    }
 }
 
-fn disableRawMode() void {
-    _ = linux.tcsetattr(linux.STDIN_FILENO, .FLUSH, &orig_termios);
+fn disableRawMode() !void {
+    // can't use this because TCSA is missing from std.c
+    //try os.tcsetattr(linux.STDIN_FILENO, .FLUSH, raw);
+    if (linux.tcsetattr(linux.STDIN_FILENO, .FLUSH, &orig_termios) == -1) {
+        return error.tcsetattr;
+    }
 }
 
 fn iscntrl(char: u8) bool {
@@ -35,8 +42,8 @@ fn iscntrl(char: u8) bool {
 }
 
 pub fn main() anyerror!void {
-    enableRawMode();
-    defer disableRawMode();
+    try enableRawMode();
+    defer disableRawMode() catch {};
 
     const stdout = std.io.getStdOut().writer();
 
