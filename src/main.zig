@@ -45,6 +45,10 @@ fn iscntrl(char: u8) bool {
     return c.iscntrl(char) != 0;
 }
 
+inline fn ctrlKey(char: u8) u8 {
+    return char & 0b1_1111;
+}
+
 //*** init ***/
 
 pub fn main() anyerror!void {
@@ -61,7 +65,7 @@ pub fn main() anyerror!void {
         } else {
             try stdout.print("{d} ('{c}')\r\n", .{ char[0], char[0] });
         }
-        if (char[0] == 'q') break;
+        if (char[0] == ctrlKey('q')) break;
     }
 }
 
