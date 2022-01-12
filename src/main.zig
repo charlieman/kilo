@@ -11,7 +11,11 @@ const c = @cImport({
 const VTIME: u8 = 5;
 const VMIN: u8 = 6;
 
+//*** data ***/
+
 var orig_termios: linux.termios = undefined;
+
+//*** terminal ***/
 
 fn enableRawMode() !void {
     orig_termios = try os.tcgetattr(linux.STDIN_FILENO);
@@ -41,6 +45,8 @@ fn iscntrl(char: u8) bool {
     return c.iscntrl(char) != 0;
 }
 
+//*** init ***/
+
 pub fn main() anyerror!void {
     try enableRawMode();
     defer disableRawMode() catch {};
@@ -58,6 +64,8 @@ pub fn main() anyerror!void {
         if (char[0] == 'q') break;
     }
 }
+
+//*** tests ***/
 
 test "basic test" {
     try std.testing.expectEqual(10, 3 + 7);
