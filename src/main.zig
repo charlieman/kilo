@@ -77,6 +77,14 @@ inline fn ctrlKey(char: u8) u8 {
 }
 
 //*** output ***/
+
+fn editorDrawRows() !void {
+    var y: u32 = 0;
+    while (y < 24) : (y += 1) {
+        _ = try stdout.write("~\r\n");
+    }
+}
+
 fn editorRefreshScreen() !void {
     // \x1b: Escape character (27)
     // [: part of the escape sequence
@@ -85,6 +93,10 @@ fn editorRefreshScreen() !void {
     _ = try stdout.write("\x1b[2J");
 
     // H: Cursor position (https://vt100.net/docs/vt100-ug/chapter3.html#CUP)
+    _ = try stdout.write("\x1b[H");
+
+    try editorDrawRows();
+
     _ = try stdout.write("\x1b[H");
 }
 
