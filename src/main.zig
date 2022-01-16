@@ -22,6 +22,8 @@ const Flow = enum {
 
 const editorConfig = struct {
     termios: linux.termios = undefined,
+    screen_rows: u32 = undefined,
+    screen_cols: u32 = undefined,
 };
 
 var E = editorConfig{};
@@ -124,9 +126,15 @@ fn editorRefreshScreen() !void {
 
 //*** init ***/
 
+fn initEditor() !void {
+    try getWindowSize(&E.screen_rows, &E.screen_cols);
+}
+
 pub fn main() anyerror!void {
     try enableRawMode();
     defer disableRawMode() catch {};
+
+    try initEditor();
 
     stdout = std.io.getStdOut().writer();
 
