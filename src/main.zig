@@ -14,6 +14,7 @@ const VMIN: u8 = 6;
 //*** data ***/
 
 var orig_termios: linux.termios = undefined;
+var stdout: std.fs.File.Writer = undefined;
 
 const Flow = enum {
     keep_going,
@@ -75,15 +76,27 @@ inline fn ctrlKey(char: u8) u8 {
     return char & 0b1_1111;
 }
 
+//*** output ***/
+fn editorRefreshScreen() !void {
+    // \x1b: Escape character (27)
+    // [: part of the escape sequence
+    // J: Erase In Display (https://vt100.net/docs/vt100-ug/chapter3.html#ED)
+    // 2: Argument to ED (Erase all of the display)
+    _ = try stdout.write("\x1b[2J");
+}
+
+//*** input ***/
+
 //*** init ***/
 
 pub fn main() anyerror!void {
     try enableRawMode();
     defer disableRawMode() catch {};
 
-    // const stdout = std.io.getStdOut().writer();
+    stdout = std.io.getStdOut().writer();
 
     while (true) {
+        try editorRefreshScreen();
         if ((try editorProcessKeypress()) == .exit) break;
     }
 }
