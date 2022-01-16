@@ -83,6 +83,9 @@ fn editorRefreshScreen() !void {
     // J: Erase In Display (https://vt100.net/docs/vt100-ug/chapter3.html#ED)
     // 2: Argument to ED (Erase all of the display)
     _ = try stdout.write("\x1b[2J");
+
+    // H: Cursor position (https://vt100.net/docs/vt100-ug/chapter3.html#CUP)
+    _ = try stdout.write("\x1b[H");
 }
 
 //*** input ***/
