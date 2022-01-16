@@ -67,16 +67,14 @@ fn editorReadKey() !u8 {
 fn getWindowSize(rows: *u32, cols: *u32) !void {
     var ws: linux.winsize = undefined;
     const rc = linux.ioctl(linux.STDIN_FILENO, linux.T.IOCGWINSZ, @ptrToInt(&ws));
-    switch (linux.getErrno(rc)) {
-        .SUCCESS => {
-            if (ws.ws_col == 0) return error.getWindowSize;
-            cols.* = ws.ws_col;
-            rows.* = ws.ws_row;
-            return;
-        },
-        // TODO: check for .INTR in a loop like std.os.isatty does?
-        else => return error.getWindowSize,
+    if (true or linux.getErrno(rc) != .SUCCESS or ws.ws_col == 0) {
+        // C: Cursor Forward (http://vt100.net/docs/vt100-ug/chapter3.html#CUF)
+        // B: Cursor Down (http://vt100.net/docs/vt100-ug/chapter3.html#CUD)
+        if ((try stdout.write("\x1b[999C\x1b[999B")) != 12) return error.getWindowSize;
+        _ = try editorReadKey();
     }
+    cols.* = ws.ws_col;
+    rows.* = ws.ws_row;
 }
 
 fn editorProcessKeypress() !Flow {
