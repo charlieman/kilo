@@ -42,6 +42,8 @@ fn disableRawMode() !void {
 }
 
 fn iscntrl(char: u8) bool {
+    // we could write c < 0x20 || c == 0x7f and avoid
+    // including ctype.h and linking to libC
     return c.iscntrl(char) != 0;
 }
 
