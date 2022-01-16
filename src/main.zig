@@ -13,7 +13,6 @@ const VMIN: u8 = 6;
 
 //*** data ***/
 
-var orig_termios: linux.termios = undefined;
 var stdout: std.fs.File.Writer = undefined;
 
 const Flow = enum {
@@ -21,12 +20,18 @@ const Flow = enum {
     exit,
 };
 
+const editorConfig = struct {
+    termios: linux.termios = undefined,
+};
+
+var E = editorConfig{};
+
 //*** terminal ***/
 
 fn enableRawMode() !void {
-    orig_termios = try os.tcgetattr(linux.STDIN_FILENO);
+    E.termios = try os.tcgetattr(linux.STDIN_FILENO);
 
-    var raw = orig_termios;
+    var raw = E.termios;
     raw.iflag &= ~(linux.BRKINT | linux.ICRNL | linux.INPCK | linux.ISTRIP | linux.IXON);
     raw.oflag &= ~(linux.OPOST);
     raw.cflag |= linux.CS8;
@@ -42,7 +47,7 @@ fn enableRawMode() !void {
 fn disableRawMode() !void {
     // can't use this because TCSA is missing from std.c
     //try os.tcsetattr(linux.STDIN_FILENO, .FLUSH, raw);
-    if (linux.tcsetattr(linux.STDIN_FILENO, .FLUSH, &orig_termios) == -1) {
+    if (linux.tcsetattr(linux.STDIN_FILENO, .FLUSH, &E.termios) == -1) {
         return error.tcsetattr;
     }
 }
