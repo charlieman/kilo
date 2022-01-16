@@ -15,6 +15,11 @@ const VMIN: u8 = 6;
 
 var orig_termios: linux.termios = undefined;
 
+const Flow = enum {
+    keep_going,
+    exit,
+};
+
 //*** terminal ***/
 
 fn enableRawMode() !void {
@@ -41,6 +46,25 @@ fn disableRawMode() !void {
     }
 }
 
+fn editorReadKey() !u8 {
+    var char: [1]u8 = .{0};
+    var nread = try os.read(linux.STDIN_FILENO, char[0..1]);
+    while (nread != 1) {
+        if (nread == -1) return error.read;
+        nread = try os.read(linux.STDIN_FILENO, char[0..1]);
+    }
+    return char[0];
+}
+
+fn editorProcessKeypress() !Flow {
+    var char = try editorReadKey();
+    switch (char) {
+        ctrlKey('q') => return .exit,
+        else => {},
+    }
+    return .keep_going;
+}
+
 fn iscntrl(char: u8) bool {
     // we could write c < 0x20 || c == 0x7f and avoid
     // including ctype.h and linking to libC
@@ -57,17 +81,10 @@ pub fn main() anyerror!void {
     try enableRawMode();
     defer disableRawMode() catch {};
 
-    const stdout = std.io.getStdOut().writer();
+    // const stdout = std.io.getStdOut().writer();
 
     while (true) {
-        var char: [1]u8 = .{0};
-        _ = try os.read(linux.STDIN_FILENO, char[0..1]);
-        if (iscntrl(char[0])) {
-            try stdout.print("{d}\r\n", .{char[0]});
-        } else {
-            try stdout.print("{d} ('{c}')\r\n", .{ char[0], char[0] });
-        }
-        if (char[0] == ctrlKey('q')) break;
+        if ((try editorProcessKeypress()) == .exit) break;
     }
 }
 
