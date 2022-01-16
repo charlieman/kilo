@@ -62,6 +62,21 @@ fn editorReadKey() !u8 {
     return char[0];
 }
 
+fn getWindowSize(rows: *u32, cols: *u32) !void {
+    var ws: linux.winsize = undefined;
+    const rc = linux.ioctl(linux.STDIN_FILENO, linux.T.IOCGWINSZ, @ptrToInt(&ws));
+    switch (linux.getErrno(rc)) {
+        .SUCCESS => {
+            if (ws.ws_col == 0) return error.getWindowSize;
+            cols.* = ws.ws_col;
+            rows.* = ws.ws_row;
+            return;
+        },
+        // TODO: check for .INTR in a loop like std.os.isatty does?
+        else => return error.getWindowSize,
+    }
+}
+
 fn editorProcessKeypress() !Flow {
     var char = try editorReadKey();
     switch (char) {
@@ -125,4 +140,14 @@ pub fn main() anyerror!void {
 
 test "basic test" {
     try std.testing.expectEqual(10, 3 + 7);
+}
+
+test "getWindowSize" {
+    if (std.os.isatty(std.os.STDOUT_FILENO)) {
+        var rows: u32 = 0;
+        var cols: u32 = 0;
+        try getWindowSize(&rows, &cols);
+        try std.testing.expect(rows > 0);
+        try std.testing.expect(cols > 0);
+    }
 }
