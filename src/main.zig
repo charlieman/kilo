@@ -130,6 +130,12 @@ fn editorDrawRows(buffer: std.ArrayList(u8).Writer) !void {
             var welcome = "Kilo editor -- version " ++ KILO_VERSION;
             var welcome_len: u32 = welcome.len;
             if (welcome.len > E.screen_cols) welcome_len = E.screen_cols;
+            var padding = (E.screen_cols - welcome_len) / 2;
+            if (padding != 0) {
+                _ = try buffer.write("~");
+                padding -= 1;
+            }
+            _ = try buffer.writeByteNTimes(' ', padding);
             _ = try buffer.write(welcome[0..welcome_len]);
         } else {
             _ = try buffer.write("~");
