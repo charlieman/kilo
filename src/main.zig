@@ -125,6 +125,9 @@ fn editorDrawRows(buffer: std.ArrayList(u8).Writer) !void {
     var y: u32 = 0;
     while (y < E.screen_rows) : (y += 1) {
         _ = try buffer.write("~");
+
+        // K: Erase From cursor to end of line (http://vt100.net/docs/vt100-ug/chapter3.html#EL)
+        _ = try buffer.write("\x1b[K");
         if (y < E.screen_rows - 1) {
             _ = try buffer.write("\r\n");
         }
@@ -142,10 +145,6 @@ fn editorRefreshScreen() !void {
     // l: Reset Mode (https://vt100.net/docs/vt100-ug/chapter3.html#RM)
     // modes: https://vt100.net/docs/vt100-ug/chapter3.html#S3.3.4
     _ = try writer.write("\x1b[?25l");
-
-    // J: Erase In Display (https://vt100.net/docs/vt100-ug/chapter3.html#ED)
-    // 2: Argument to ED (Erase all of the display)
-    _ = try writer.write("\x1b[2J");
 
     // H: Cursor position (https://vt100.net/docs/vt100-ug/chapter3.html#CUP)
     _ = try writer.write("\x1b[H");
