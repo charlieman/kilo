@@ -23,9 +23,11 @@ const Flow = enum {
 };
 
 const editorConfig = struct {
-    termios: linux.termios = undefined,
+    cx: u32 = 0,
+    cy: u32 = 0,
     screen_rows: u32 = undefined,
     screen_cols: u32 = undefined,
+    termios: linux.termios = undefined,
 };
 
 var E = editorConfig{};
@@ -178,6 +180,8 @@ fn editorRefreshScreen() !void {
 //*** init ***/
 
 fn initEditor() !void {
+    E.cx = 0;
+    E.cy = 0;
     try getWindowSize(&E.screen_rows, &E.screen_cols);
 }
 
