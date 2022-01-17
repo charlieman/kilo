@@ -12,7 +12,7 @@ const VTIME: u8 = 5;
 const VMIN: u8 = 6;
 
 //*** data ***/
-
+var allocator: std.mem.Allocator = undefined;
 var stdout: std.fs.File.Writer = undefined;
 
 const Flow = enum {
@@ -121,29 +121,35 @@ inline fn ctrlKey(char: u8) u8 {
 
 //*** output ***/
 
-fn editorDrawRows() !void {
+fn editorDrawRows(buffer: std.ArrayList(u8).Writer) !void {
     var y: u32 = 0;
     while (y < E.screen_rows) : (y += 1) {
-        _ = try stdout.write("~");
+        _ = try buffer.write("~");
         if (y < E.screen_rows - 1) {
-            _ = try stdout.write("\r\n");
+            _ = try buffer.write("\r\n");
         }
     }
 }
 
 fn editorRefreshScreen() !void {
+    var ab = std.ArrayList(u8).init(allocator);
+    defer ab.deinit();
+
+    const writer = ab.writer();
+
     // \x1b: Escape character (27)
     // [: part of the escape sequence
     // J: Erase In Display (https://vt100.net/docs/vt100-ug/chapter3.html#ED)
     // 2: Argument to ED (Erase all of the display)
-    _ = try stdout.write("\x1b[2J");
+    _ = try writer.write("\x1b[2J");
 
     // H: Cursor position (https://vt100.net/docs/vt100-ug/chapter3.html#CUP)
-    _ = try stdout.write("\x1b[H");
+    _ = try writer.write("\x1b[H");
 
-    try editorDrawRows();
+    try editorDrawRows(writer);
 
-    _ = try stdout.write("\x1b[H");
+    _ = try writer.write("\x1b[H");
+    _ = try stdout.write(ab.items);
 }
 
 //*** input ***/
@@ -154,7 +160,12 @@ fn initEditor() !void {
     try getWindowSize(&E.screen_rows, &E.screen_cols);
 }
 
+var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+
 pub fn main() anyerror!void {
+    defer std.testing.expect(!gpa.deinit()) catch @panic("leak");
+    allocator = gpa.allocator();
+
     try enableRawMode();
     defer disableRawMode() catch {};
 
