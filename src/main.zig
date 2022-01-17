@@ -77,14 +77,13 @@ fn getCursorPosition(rows: *u32, cols: *u32) !void {
         if (nread != 1) break;
         if (buf[i] == 'R') break;
     }
-    buf[i] = 0;
-    var temp = buf[1..i :0];
-    try stdout.print("\r\nbuf: '{s}'\r\n", .{temp});
+    buf[i] = 0; // With the slice in the tokenizer this is not really necessary
 
-    _ = rows;
-    _ = cols;
-    _ = try editorReadKey();
-    return error.getCursorPosition;
+    if (buf[0] != '\x1b' or buf[1] != '[') return error.getCursorPosition;
+
+    var it = std.mem.tokenize(u8, buf[2..i], ";");
+    rows.* = try std.fmt.parseInt(u32, it.next() orelse return error.getCursorPosition, 10);
+    cols.* = try std.fmt.parseInt(u32, it.next() orelse return error.getCursorPosition, 10);
 }
 
 fn getWindowSize(rows: *u32, cols: *u32) !void {
