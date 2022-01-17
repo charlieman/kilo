@@ -89,7 +89,7 @@ fn getCursorPosition(rows: *u32, cols: *u32) !void {
 fn getWindowSize(rows: *u32, cols: *u32) !void {
     var ws: linux.winsize = undefined;
     const rc = linux.ioctl(linux.STDIN_FILENO, linux.T.IOCGWINSZ, @ptrToInt(&ws));
-    if (true or linux.getErrno(rc) != .SUCCESS or ws.ws_col == 0) {
+    if (linux.getErrno(rc) != .SUCCESS or ws.ws_col == 0) {
         // C: Cursor Forward (http://vt100.net/docs/vt100-ug/chapter3.html#CUF)
         // B: Cursor Down (http://vt100.net/docs/vt100-ug/chapter3.html#CUD)
         if ((try stdout.write("\x1b[999C\x1b[999B")) != 12) return error.getWindowSize;
