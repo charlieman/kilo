@@ -167,8 +167,8 @@ fn editorRefreshScreen() !void {
     _ = try writer.write("\x1b[H");
 
     try editorDrawRows(writer);
+    try writer.print("\x1b[{d};{d}H", .{ E.cy + 1, E.cx + 1 });
 
-    _ = try writer.write("\x1b[H");
     // h: Set Mode https://vt100.net/docs/vt100-ug/chapter3.html#SM
     _ = try writer.write("\x1b[?25h");
 
