@@ -7,11 +7,20 @@ const c = @cImport({
     @cInclude("ctype.h");
 });
 
+//*** defines ***/
+
 // These variables are not set in zig's std.os
 const VTIME: u8 = 5;
 const VMIN: u8 = 6;
 
 const KILO_VERSION = "0.0.1";
+
+const EditorKey = struct {
+    const ARROW_LEFT = 'a';
+    const ARROW_RIGHT = 'd';
+    const ARROW_UP = 'w';
+    const ARROW_DOWN = 's';
+};
 
 //*** data ***/
 var allocator: std.mem.Allocator = undefined;
@@ -72,10 +81,10 @@ fn editorReadKey() !u8 {
         // ABCD: Arrow keys
         if (seq[0] == '[') {
             switch (seq[1]) {
-                'A' => return 'w',
-                'B' => return 's',
-                'C' => return 'd',
-                'D' => return 'a',
+                'A' => return EditorKey.ARROW_UP,
+                'B' => return EditorKey.ARROW_DOWN,
+                'C' => return EditorKey.ARROW_RIGHT,
+                'D' => return EditorKey.ARROW_LEFT,
                 else => {},
             }
         }
@@ -123,10 +132,10 @@ fn getWindowSize(rows: *u32, cols: *u32) !void {
 
 fn editorMoveCursor(key: u8) void {
     switch (key) {
-        'a' => E.cx -|= 1,
-        'd' => E.cx += 1,
-        'w' => E.cy -|= 1,
-        's' => E.cy += 1,
+        EditorKey.ARROW_LEFT => E.cx -|= 1,
+        EditorKey.ARROW_RIGHT => E.cx += 1,
+        EditorKey.ARROW_UP => E.cy -|= 1,
+        EditorKey.ARROW_DOWN => E.cy += 1,
         else => {},
     }
 }
