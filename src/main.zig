@@ -139,6 +139,10 @@ fn editorRefreshScreen() !void {
 
     // \x1b: Escape character (27)
     // [: part of the escape sequence
+    // l: Reset Mode (https://vt100.net/docs/vt100-ug/chapter3.html#RM)
+    // modes: https://vt100.net/docs/vt100-ug/chapter3.html#S3.3.4
+    _ = try writer.write("\x1b[?25l");
+
     // J: Erase In Display (https://vt100.net/docs/vt100-ug/chapter3.html#ED)
     // 2: Argument to ED (Erase all of the display)
     _ = try writer.write("\x1b[2J");
@@ -149,6 +153,9 @@ fn editorRefreshScreen() !void {
     try editorDrawRows(writer);
 
     _ = try writer.write("\x1b[H");
+    // h: Set Mode https://vt100.net/docs/vt100-ug/chapter3.html#SM
+    _ = try writer.write("\x1b[?25h");
+
     _ = try stdout.write(ab.items);
 }
 
