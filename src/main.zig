@@ -104,10 +104,21 @@ fn getWindowSize(rows: *u32, cols: *u32) !void {
     rows.* = ws.ws_row;
 }
 
+fn editorMoveCursor(key: u8) void {
+    switch (key) {
+        'a' => E.cx -|= 1,
+        'd' => E.cx += 1,
+        'w' => E.cy -|= 1,
+        's' => E.cy += 1,
+        else => {},
+    }
+}
+
 fn editorProcessKeypress() !Flow {
     var char = try editorReadKey();
     switch (char) {
         ctrlKey('q') => return .exit,
+        'w', 'a', 's', 'd' => editorMoveCursor(char),
         else => {},
     }
     return .keep_going;
