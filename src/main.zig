@@ -65,21 +65,22 @@ fn editorReadKey() !u8 {
 }
 
 fn getCursorPosition(rows: *u32, cols: *u32) !void {
+    var buf: [31:0]u8 = undefined;
+
     // n: Device Status Report (https://vt100.net/docs/vt100-ug/chapter3.html#DSR)
     // 6: report active position
     if ((try stdout.write("\x1b[6n")) != 4) return error.getCursorPosition;
-    _ = try stdout.write("\r\n");
 
-    var char: [1]u8 = .{0};
-    var nread = try os.read(linux.STDIN_FILENO, char[0..1]);
-    while (nread == 1) : (nread = try os.read(linux.STDIN_FILENO, char[0..1])) {
-        if (iscntrl(char[0])) {
-            try stdout.print("{d}\r\n", .{char[0]});
-        } else {
-            try stdout.print("{d} ('{c}')\r\n", .{ char[0], char[0] });
-        }
-        if (char[0] == ctrlKey('q')) break;
+    var i: usize = 0;
+    while (i < buf.len) : (i += 1) {
+        var nread = try os.read(linux.STDIN_FILENO, buf[i .. i + 1]);
+        if (nread != 1) break;
+        if (buf[i] == 'R') break;
     }
+    buf[i] = 0;
+    var temp = buf[1..i :0];
+    try stdout.print("\r\nbuf: '{s}'\r\n", .{temp});
+
     _ = rows;
     _ = cols;
     _ = try editorReadKey();
