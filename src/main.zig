@@ -124,7 +124,10 @@ inline fn ctrlKey(char: u8) u8 {
 fn editorDrawRows() !void {
     var y: u32 = 0;
     while (y < E.screen_rows) : (y += 1) {
-        _ = try stdout.write("~\r\n");
+        _ = try stdout.write("~");
+        if (y < E.screen_rows - 1) {
+            _ = try stdout.write("\r\n");
+        }
     }
 }
 
