@@ -11,6 +11,8 @@ const c = @cImport({
 const VTIME: u8 = 5;
 const VMIN: u8 = 6;
 
+const KILO_VERSION = "0.0.1";
+
 //*** data ***/
 var allocator: std.mem.Allocator = undefined;
 var stdout: std.fs.File.Writer = undefined;
@@ -124,7 +126,14 @@ inline fn ctrlKey(char: u8) u8 {
 fn editorDrawRows(buffer: std.ArrayList(u8).Writer) !void {
     var y: u32 = 0;
     while (y < E.screen_rows) : (y += 1) {
-        _ = try buffer.write("~");
+        if (y == E.screen_rows / 3) {
+            var welcome = "Kilo editor -- version " ++ KILO_VERSION;
+            var welcome_len: u32 = welcome.len;
+            if (welcome.len > E.screen_cols) welcome_len = E.screen_cols;
+            _ = try buffer.write(welcome[0..welcome_len]);
+        } else {
+            _ = try buffer.write("~");
+        }
 
         // K: Erase From cursor to end of line (http://vt100.net/docs/vt100-ug/chapter3.html#EL)
         _ = try buffer.write("\x1b[K");
