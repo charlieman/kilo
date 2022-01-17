@@ -64,6 +64,28 @@ fn editorReadKey() !u8 {
     return char[0];
 }
 
+fn getCursorPosition(rows: *u32, cols: *u32) !void {
+    // n: Device Status Report (https://vt100.net/docs/vt100-ug/chapter3.html#DSR)
+    // 6: report active position
+    if ((try stdout.write("\x1b[6n")) != 4) return error.getCursorPosition;
+    _ = try stdout.write("\r\n");
+
+    var char: [1]u8 = .{0};
+    var nread = try os.read(linux.STDIN_FILENO, char[0..1]);
+    while (nread == 1) : (nread = try os.read(linux.STDIN_FILENO, char[0..1])) {
+        if (iscntrl(char[0])) {
+            try stdout.print("{d}\r\n", .{char[0]});
+        } else {
+            try stdout.print("{d} ('{c}')\r\n", .{ char[0], char[0] });
+        }
+        if (char[0] == ctrlKey('q')) break;
+    }
+    _ = rows;
+    _ = cols;
+    _ = try editorReadKey();
+    return error.getCursorPosition;
+}
+
 fn getWindowSize(rows: *u32, cols: *u32) !void {
     var ws: linux.winsize = undefined;
     const rc = linux.ioctl(linux.STDIN_FILENO, linux.T.IOCGWINSZ, @ptrToInt(&ws));
@@ -71,7 +93,8 @@ fn getWindowSize(rows: *u32, cols: *u32) !void {
         // C: Cursor Forward (http://vt100.net/docs/vt100-ug/chapter3.html#CUF)
         // B: Cursor Down (http://vt100.net/docs/vt100-ug/chapter3.html#CUD)
         if ((try stdout.write("\x1b[999C\x1b[999B")) != 12) return error.getWindowSize;
-        _ = try editorReadKey();
+        try getCursorPosition(rows, cols);
+        return;
     }
     cols.* = ws.ws_col;
     rows.* = ws.ws_row;
