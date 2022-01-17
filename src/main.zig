@@ -16,10 +16,10 @@ const VMIN: u8 = 6;
 const KILO_VERSION = "0.0.1";
 
 const EditorKey = struct {
-    const ARROW_LEFT = 'a';
-    const ARROW_RIGHT = 'd';
-    const ARROW_UP = 'w';
-    const ARROW_DOWN = 's';
+    const ARROW_LEFT = 1000;
+    const ARROW_RIGHT = 1001;
+    const ARROW_UP = 1002;
+    const ARROW_DOWN = 1003;
 };
 
 //*** data ***/
@@ -67,7 +67,7 @@ fn disableRawMode() !void {
     }
 }
 
-fn editorReadKey() !u8 {
+fn editorReadKey() !u32 {
     var char: [1]u8 = .{0};
     var nread = try os.read(linux.STDIN_FILENO, char[0..1]);
     while (nread != 1) : (nread = try os.read(linux.STDIN_FILENO, char[0..1])) {
@@ -130,33 +130,13 @@ fn getWindowSize(rows: *u32, cols: *u32) !void {
     rows.* = ws.ws_row;
 }
 
-fn editorMoveCursor(key: u8) void {
-    switch (key) {
-        EditorKey.ARROW_LEFT => E.cx -|= 1,
-        EditorKey.ARROW_RIGHT => E.cx += 1,
-        EditorKey.ARROW_UP => E.cy -|= 1,
-        EditorKey.ARROW_DOWN => E.cy += 1,
-        else => {},
-    }
-}
-
-fn editorProcessKeypress() !Flow {
-    var char = try editorReadKey();
-    switch (char) {
-        ctrlKey('q') => return .exit,
-        'w', 'a', 's', 'd' => editorMoveCursor(char),
-        else => {},
-    }
-    return .keep_going;
-}
-
 fn iscntrl(char: u8) bool {
     // we could write c < 0x20 || c == 0x7f and avoid
     // including ctype.h and linking to libC
     return c.iscntrl(char) != 0;
 }
 
-inline fn ctrlKey(char: u8) u8 {
+inline fn ctrlKey(char: u32) u32 {
     return char & 0b1_1111;
 }
 
@@ -213,6 +193,26 @@ fn editorRefreshScreen() !void {
 }
 
 //*** input ***/
+
+fn editorMoveCursor(key: u32) void {
+    switch (key) {
+        EditorKey.ARROW_LEFT => E.cx -|= 1,
+        EditorKey.ARROW_RIGHT => E.cx += 1,
+        EditorKey.ARROW_UP => E.cy -|= 1,
+        EditorKey.ARROW_DOWN => E.cy += 1,
+        else => {},
+    }
+}
+
+fn editorProcessKeypress() !Flow {
+    var char = try editorReadKey();
+    switch (char) {
+        ctrlKey('q') => return .exit,
+        EditorKey.ARROW_UP, EditorKey.ARROW_LEFT, EditorKey.ARROW_DOWN, EditorKey.ARROW_RIGHT => editorMoveCursor(char),
+        else => {},
+    }
+    return .keep_going;
+}
 
 //*** init ***/
 
