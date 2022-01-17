@@ -61,11 +61,28 @@ fn disableRawMode() !void {
 fn editorReadKey() !u8 {
     var char: [1]u8 = .{0};
     var nread = try os.read(linux.STDIN_FILENO, char[0..1]);
-    while (nread != 1) {
+    while (nread != 1) : (nread = try os.read(linux.STDIN_FILENO, char[0..1])) {
         if (nread == -1) return error.read;
-        nread = try os.read(linux.STDIN_FILENO, char[0..1]);
     }
-    return char[0];
+    if (char[0] == '\x1b') {
+        var seq: [3]u8 = undefined;
+        if ((try os.read(linux.STDIN_FILENO, seq[0..1])) != 1) return '\x1b';
+        if ((try os.read(linux.STDIN_FILENO, seq[1..2])) != 1) return '\x1b';
+
+        // ABCD: Arrow keys
+        if (seq[0] == '[') {
+            switch (seq[1]) {
+                'A' => return 'w',
+                'B' => return 's',
+                'C' => return 'd',
+                'D' => return 'a',
+                else => {},
+            }
+        }
+        return '\x1b';
+    } else {
+        return char[0];
+    }
 }
 
 fn getCursorPosition(rows: *u32, cols: *u32) !void {
