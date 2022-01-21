@@ -197,9 +197,9 @@ fn editorRefreshScreen() !void {
 fn editorMoveCursor(key: u32) void {
     switch (key) {
         EditorKey.ARROW_LEFT => E.cx -|= 1,
-        EditorKey.ARROW_RIGHT => E.cx += 1,
+        EditorKey.ARROW_RIGHT => E.cx += @as(u32, if (E.cx < E.screen_cols - 1) 1 else 0),
         EditorKey.ARROW_UP => E.cy -|= 1,
-        EditorKey.ARROW_DOWN => E.cy += 1,
+        EditorKey.ARROW_DOWN => E.cy += @as(u32, if (E.cy < E.screen_rows - 1) 1 else 0),
         else => {},
     }
 }
