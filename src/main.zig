@@ -20,6 +20,7 @@ const EditorKey = enum {
     ARROW_RIGHT,
     ARROW_UP,
     ARROW_DOWN,
+    DEL_KEY,
     HOME_KEY,
     END_KEY,
     PAGE_UP,
@@ -94,6 +95,7 @@ fn editorReadKey() !KeyOrCode {
                 if (seq[2] == '~') {
                     switch (seq[1]) {
                         '1', '7' => return KeyOrCode{ .key = .HOME_KEY },
+                        '3' => return KeyOrCode{ .key = .DEL_KEY },
                         '4', '8' => return KeyOrCode{ .key = .END_KEY },
                         '5' => return KeyOrCode{ .key = .PAGE_UP },
                         '6' => return KeyOrCode{ .key = .PAGE_DOWN },
