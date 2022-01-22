@@ -20,6 +20,8 @@ const EditorKey = enum {
     ARROW_RIGHT,
     ARROW_UP,
     ARROW_DOWN,
+    HOME_KEY,
+    END_KEY,
     PAGE_UP,
     PAGE_DOWN,
 };
@@ -91,6 +93,8 @@ fn editorReadKey() !KeyOrCode {
                 if ((try os.read(linux.STDIN_FILENO, seq[2..3])) != 1) return KeyOrCode{ .code = '\x1b' };
                 if (seq[2] == '~') {
                     switch (seq[1]) {
+                        '1', '7' => return KeyOrCode{ .key = .HOME_KEY },
+                        '4', '8' => return KeyOrCode{ .key = .END_KEY },
                         '5' => return KeyOrCode{ .key = .PAGE_UP },
                         '6' => return KeyOrCode{ .key = .PAGE_DOWN },
                         else => {},
@@ -102,8 +106,16 @@ fn editorReadKey() !KeyOrCode {
                     'B' => return KeyOrCode{ .key = .ARROW_DOWN },
                     'C' => return KeyOrCode{ .key = .ARROW_RIGHT },
                     'D' => return KeyOrCode{ .key = .ARROW_LEFT },
+                    'H' => return KeyOrCode{ .key = .HOME_KEY },
+                    'F' => return KeyOrCode{ .key = .END_KEY },
                     else => {},
                 }
+            }
+        } else if (seq[0] == 'O') {
+            switch (seq[1]) {
+                'H' => return KeyOrCode{ .key = .HOME_KEY },
+                'F' => return KeyOrCode{ .key = .END_KEY },
+                else => {},
             }
         }
         return KeyOrCode{ .code = '\x1b' };
@@ -244,6 +256,7 @@ fn editorProcessKeypress() !Flow {
                     editorMoveCursor(if (key == .PAGE_UP) .ARROW_UP else .ARROW_DOWN);
                 }
             },
+            else => {},
         },
     }
     return .keep_going;
