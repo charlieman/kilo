@@ -20,6 +20,8 @@ const EditorKey = enum {
     ARROW_RIGHT,
     ARROW_UP,
     ARROW_DOWN,
+    PAGE_UP,
+    PAGE_DOWN,
 };
 
 const KeyOrCode = union(enum) {
@@ -85,12 +87,23 @@ fn editorReadKey() !KeyOrCode {
 
         // ABCD: Arrow keys
         if (seq[0] == '[') {
-            switch (seq[1]) {
-                'A' => return KeyOrCode{ .key = .ARROW_UP },
-                'B' => return KeyOrCode{ .key = .ARROW_DOWN },
-                'C' => return KeyOrCode{ .key = .ARROW_RIGHT },
-                'D' => return KeyOrCode{ .key = .ARROW_LEFT },
-                else => {},
+            if (seq[1] >= '0' and seq[1] <= '9') {
+                if ((try os.read(linux.STDIN_FILENO, seq[2..3])) != 1) return KeyOrCode{ .code = '\x1b' };
+                if (seq[2] == '~') {
+                    switch (seq[1]) {
+                        '5' => return KeyOrCode{ .key = .PAGE_UP },
+                        '6' => return KeyOrCode{ .key = .PAGE_DOWN },
+                        else => {},
+                    }
+                }
+            } else {
+                switch (seq[1]) {
+                    'A' => return KeyOrCode{ .key = .ARROW_UP },
+                    'B' => return KeyOrCode{ .key = .ARROW_DOWN },
+                    'C' => return KeyOrCode{ .key = .ARROW_RIGHT },
+                    'D' => return KeyOrCode{ .key = .ARROW_LEFT },
+                    else => {},
+                }
             }
         }
         return KeyOrCode{ .code = '\x1b' };
@@ -205,6 +218,7 @@ fn editorMoveCursor(key: EditorKey) void {
         .ARROW_RIGHT => E.cx += @as(u32, if (E.cx < E.screen_cols - 1) 1 else 0),
         .ARROW_UP => E.cy -|= 1,
         .ARROW_DOWN => E.cy += @as(u32, if (E.cy < E.screen_rows - 1) 1 else 0),
+        else => {},
     }
 }
 
@@ -221,6 +235,7 @@ fn editorProcessKeypress() !Flow {
             .ARROW_DOWN,
             .ARROW_RIGHT,
             => editorMoveCursor(key),
+            else => {},
         },
     }
     return .keep_going;
