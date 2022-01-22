@@ -15,11 +15,16 @@ const VMIN: u8 = 6;
 
 const KILO_VERSION = "0.0.1";
 
-const EditorKey = struct {
-    const ARROW_LEFT = 1000;
-    const ARROW_RIGHT = 1001;
-    const ARROW_UP = 1002;
-    const ARROW_DOWN = 1003;
+const EditorKey = enum {
+    ARROW_LEFT,
+    ARROW_RIGHT,
+    ARROW_UP,
+    ARROW_DOWN,
+};
+
+const KeyOrCode = union(enum) {
+    key: EditorKey,
+    code: u32,
 };
 
 //*** data ***/
@@ -67,30 +72,30 @@ fn disableRawMode() !void {
     }
 }
 
-fn editorReadKey() !u32 {
+fn editorReadKey() !KeyOrCode {
     var char: [1]u8 = .{0};
-    var nread = try os.read(linux.STDIN_FILENO, char[0..1]);
-    while (nread != 1) : (nread = try os.read(linux.STDIN_FILENO, char[0..1])) {
+    var nread = try os.read(linux.STDIN_FILENO, char[0..]);
+    while (nread != 1) : (nread = try os.read(linux.STDIN_FILENO, char[0..])) {
         if (nread == -1) return error.read;
     }
     if (char[0] == '\x1b') {
         var seq: [3]u8 = undefined;
-        if ((try os.read(linux.STDIN_FILENO, seq[0..1])) != 1) return '\x1b';
-        if ((try os.read(linux.STDIN_FILENO, seq[1..2])) != 1) return '\x1b';
+        if ((try os.read(linux.STDIN_FILENO, seq[0..1])) != 1) return KeyOrCode{ .code = '\x1b' };
+        if ((try os.read(linux.STDIN_FILENO, seq[1..2])) != 1) return KeyOrCode{ .code = '\x1b' };
 
         // ABCD: Arrow keys
         if (seq[0] == '[') {
             switch (seq[1]) {
-                'A' => return EditorKey.ARROW_UP,
-                'B' => return EditorKey.ARROW_DOWN,
-                'C' => return EditorKey.ARROW_RIGHT,
-                'D' => return EditorKey.ARROW_LEFT,
+                'A' => return KeyOrCode{ .key = .ARROW_UP },
+                'B' => return KeyOrCode{ .key = .ARROW_DOWN },
+                'C' => return KeyOrCode{ .key = .ARROW_RIGHT },
+                'D' => return KeyOrCode{ .key = .ARROW_LEFT },
                 else => {},
             }
         }
-        return '\x1b';
+        return KeyOrCode{ .code = '\x1b' };
     } else {
-        return char[0];
+        return KeyOrCode{ .code = char[0] };
     }
 }
 
@@ -194,22 +199,29 @@ fn editorRefreshScreen() !void {
 
 //*** input ***/
 
-fn editorMoveCursor(key: u32) void {
+fn editorMoveCursor(key: EditorKey) void {
     switch (key) {
-        EditorKey.ARROW_LEFT => E.cx -|= 1,
-        EditorKey.ARROW_RIGHT => E.cx += @as(u32, if (E.cx < E.screen_cols - 1) 1 else 0),
-        EditorKey.ARROW_UP => E.cy -|= 1,
-        EditorKey.ARROW_DOWN => E.cy += @as(u32, if (E.cy < E.screen_rows - 1) 1 else 0),
-        else => {},
+        .ARROW_LEFT => E.cx -|= 1,
+        .ARROW_RIGHT => E.cx += @as(u32, if (E.cx < E.screen_cols - 1) 1 else 0),
+        .ARROW_UP => E.cy -|= 1,
+        .ARROW_DOWN => E.cy += @as(u32, if (E.cy < E.screen_rows - 1) 1 else 0),
     }
 }
 
 fn editorProcessKeypress() !Flow {
-    var char = try editorReadKey();
-    switch (char) {
-        ctrlKey('q') => return .exit,
-        EditorKey.ARROW_UP, EditorKey.ARROW_LEFT, EditorKey.ARROW_DOWN, EditorKey.ARROW_RIGHT => editorMoveCursor(char),
-        else => {},
+    var keycode = try editorReadKey();
+    switch (keycode) {
+        .code => |char| switch (char) {
+            ctrlKey('q') => return .exit,
+            else => {},
+        },
+        .key => |key| switch (key) {
+            .ARROW_UP,
+            .ARROW_LEFT,
+            .ARROW_DOWN,
+            .ARROW_RIGHT,
+            => editorMoveCursor(key),
+        },
     }
     return .keep_going;
 }
