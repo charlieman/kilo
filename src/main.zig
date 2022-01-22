@@ -235,7 +235,15 @@ fn editorProcessKeypress() !Flow {
             .ARROW_DOWN,
             .ARROW_RIGHT,
             => editorMoveCursor(key),
-            else => {},
+
+            EditorKey.PAGE_UP,
+            EditorKey.PAGE_DOWN,
+            => {
+                var times = E.screen_cols;
+                while (times > 0) : (times -= 1) {
+                    editorMoveCursor(if (key == .PAGE_UP) .ARROW_UP else .ARROW_DOWN);
+                }
+            },
         },
     }
     return .keep_going;
